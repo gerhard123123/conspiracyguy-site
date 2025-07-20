@@ -1,0 +1,185 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    font-family: Arial, sans-serif;
+    overflow-x: hidden;
+}
+
+section {
+    min-height: 100vh;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: white;
+    text-align: center;
+    text-shadow: 1px 1px 5px black;
+    background-size: 100% 100%;
+    overflow: hidden;
+}
+
+#home {
+    position: relative;
+    background-image: url('img/home.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.videoOnStrip {
+    position: absolute;
+    z-index: 10;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+.videoOnStrip video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border: none;
+}
+
+#map {
+    background-image: url('img/map.jpeg');
+}
+
+#about {
+    background-image: url('img/about.jpeg');
+}
+
+#soon {
+    position: relative;
+    background-image: url('img/soon.jpg');
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* Allgemeiner Stil für alle Icons */
+#soon div {
+    position: absolute; /* jetzt jedes Icon unabhängig positionierbar */
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    opacity: 0.8;
+    z-index: 10;
+}
+
+/* ✏️ Einzelne Platzierung – du kannst alle top/left-Werte anpassen */
+.iconX { top: 72vh; left: 40vw;}
+.iconTG { top: 73vh; left: 47vw;}
+.iconDEX { top: 74vh; left: 53vw;}
+
+.iconZRA { top: 80vh; left: 40vw;}
+.iconBRD { top: 82vh; left: 47vw;}
+.iconIG { top: 83vh; left: 53vw;}
+.iconTT { top: 89vh; left: 40vw;}
+
+
+/* Hide mobile sections by default */
+.mobile-only {
+    display: none;
+}
+
+/* Show mobile layout and hide desktop layout for tablets and phones */
+@media (max-width: 1024px) {
+    /* Hide desktop sections */
+    #home,
+    #map,
+    #about,
+    #soon {
+        display: none;
+    }
+
+    /* Show mobile layout */
+    .mobile-only {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Responsive mobile home styling */
+    #home-mobile {
+        position: relative;
+        min-height: 100vh;
+        background-image: url('img/home-mobile.jpeg'); /* change if different */
+        background-size: cover;
+        background-position: center;
+        padding: 20px;
+        color: white;
+        text-align: center;
+    }
+
+    .videoOnStripMobile {
+
+        position: absolute;
+        top: 435px;
+        left: 3px;
+        z-index: 10;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+    }
+
+    .videoOnStripMobile video {
+        width: 980px;
+        height: 500px;
+        object-fit: cover;
+        border: none;
+    }
+
+    #main-mobile {
+        min-height: 100vh;
+        background-image: url('img/main-mobile.jpeg'); /* change if needed */
+        background-size: cover;
+        background-position: center;
+        padding: 20px;
+        color: white;
+        text-align: center;
+    }
+    #main-mobile {
+        background-image: url('img/main-mobile.jpeg'); /* your background */
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        min-height: 100vh;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Shared mobile icon styling */
+    #main-mobile div {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        opacity: 0.85;
+        z-index: 10;
+    }
+
+    /* Positioning of each icon (adjust as needed) */
+    .iconX-mobile   { top: 79vh; left: 40vw; }   /* Twitter/X - Blue */
+    .iconTG-mobile  { top: 79vh; left: 50vw;  }   /* Telegram - Teal */
+    .iconDEX-mobile { top: 80vh; left: 61vw; }   /* DEX - Purple */
+
+    .iconZRA-mobile { top: 83vh; left: 39vw;  }   /* Zora - Red */
+    .iconBRD-mobile { top: 83vh; left: 50vw;  }   /* BRD - Orange */
+    .iconIG-mobile  { top: 84vh; left: 61vw;  }   /* Instagram - Pink */
+
+    .iconTT-mobile  { top: 86vh; left: 38vw; }   /* TikTok - Black */
+
+
+}
