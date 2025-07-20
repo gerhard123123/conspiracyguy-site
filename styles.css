@@ -28,7 +28,7 @@ section {
 
 #home {
     position: relative;
-    background-image: url('ConspiWeb/src/img/home.jpg');
+    background-image: url('img/home.jpg');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -52,16 +52,16 @@ section {
 }
 
 #map {
-    background-image: url('ConspiWeb/src/img/map.jpeg');
+    background-image: url('img/map.jpeg');
 }
 
 #about {
-    background-image: url('ConspiWeb/src/img/about.jpeg');
+    background-image: url('img/about.jpeg');
 }
 
 #soon {
     position: relative;
-    background-image: url('ConspiWeb/src/img/soon.jpg');
+    background-image: url('img/soon.jpg');
     background-position: center;
     background-repeat: no-repeat;
     min-height: 100vh;
@@ -116,7 +116,7 @@ section {
     #home-mobile {
         position: relative;
         min-height: 100vh;
-        background-image: url('ConspiWeb/src/img/home-mobile.jpeg'); /* change if different */
+        background-image: url('img/home-mobile.jpeg'); /* change if different */
         background-size: cover;
         background-position: center;
         padding: 20px;
@@ -143,7 +143,7 @@ section {
 
     #main-mobile {
         min-height: 100vh;
-        background-image: url('ConspiWeb/src/img/main-mobile.jpeg'); /* change if needed */
+        background-image: url('img/main-mobile.jpeg'); /* change if needed */
         background-size: cover;
         background-position: center;
         padding: 20px;
@@ -151,7 +151,7 @@ section {
         text-align: center;
     }
     #main-mobile {
-        background-image: url('ConspiWeb/src/img/main-mobile.jpeg'); /* your background */
+        background-image: url('img/main-mobile.jpeg'); /* your background */
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
