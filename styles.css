@@ -127,7 +127,7 @@ section {
     .videoOnStripMobile {
 
         position: absolute;
-        top: 435px;
+        top: 410px;
         left: 3px;
         z-index: 10;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
