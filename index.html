@@ -394,7 +394,7 @@
             awaitingPasswordConfirmation = false;
             const output = document.createElement('div');
             output.className = 'password-ascii-art';
-            fetch('ascii/ascii-art-laugh.txt')
+            fetch('ascii-art-laugh.txt')
               .then(response => {
                 if (!response.ok) throw new Error('File not found');
                 return response.text();
@@ -504,7 +504,7 @@
           } else if (command === '/sus') {
             const output = document.createElement('div');
             output.className = 'ascii-art';
-            fetch('ascii/ascii-art-pigeon.txt')
+            fetch('ascii-art-pigeon.txt')
               .then(response => {
                 if (!response.ok) throw new Error('File not found');
                 return response.text();
@@ -636,3 +636,4 @@
 </script>
 </body>
 </html>
+
