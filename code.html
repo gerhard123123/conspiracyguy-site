@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CGUY // Terminal Breach</title>
+<style>
+  :root{
+    --phosphor:#00ff88;
+    --phosphor-dim:#7cffb0;
+    --scan:rgba(255,255,255,.1);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:#000;color:var(--phosphor);font-family:Menlo,Consolas,monospace;overflow:hidden}
+
+  .log {
+    flex:1;overflow:auto;white-space:pre-wrap;word-break: break-word;overflow-wrap: break-word;
+    text-shadow: 0 0 0.5vw var(--phosphor), 0 0 1vw var(--phosphor), 0 0 2vw var(--phosphor);
+    font-size: calc(0.7rem + 0.5vw);
+    padding: 1vw 4vw 1vw 0vw;
+    margin-bottom: -1.2vw;
+  }
+
+  .ascii-art {
+    font-size: calc(0.5rem + 0.3vw);
+    white-space: pre-wrap;
+  }
+  .password-ascii-art {
+    font-size: calc(0.4rem + 0.2vw);
+    white-space: pre-wrap;
+  }
+
+  .progress-container {
+    display: inline-block;
+    width: 40vw;
+    height: 1em;
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid var(--phosphor);
+    vertical-align: middle;
+    margin-left: 1ch;
+    position: relative;
+    z-index: 4;
+    overflow: hidden;
+  }
+  .progress-bar {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: #00ff88;
+    animation: fillBar 2s linear forwards;
+    box-shadow: 0 0 0.5vw var(--phosphor), 0 0 1vw var(--phosphor);
+    z-index: 5;
+  }
+  @keyframes fillBar {
+    from { width: 0; }
+    to { width: var(--target-width, 100%); }
+  }
+
+  .progress-percentage {
+    display: inline-block;
+    margin-left: 1ch;
+    font-family: Menlo, Consolas, monospace;
+    font-size: calc(0.7rem + 0.5vw);
+    color: var(--phosphor);
+    text-shadow: 0 0 0.5vw var(--phosphor), 0 0 1vw var(--phosphor), 0 0 2vw var(--phosphor);
+  }
+
+  .prompt-container {
+    display: flex;
+    align-items: baseline;
+  }
+  .prompt-text {
+    white-space: nowrap;
+  }
+  .command-input {
+    background: transparent;
+    border: none;
+    color: transparent;
+    font-family: Menlo, Consolas, monospace;
+    font-size: inherit;
+    outline: none;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    caret-color: transparent;
+  }
+  .cursor {
+    display: inline-block;
+    width: 1ch;
+    border-bottom: 0.15em solid currentColor;
+    vertical-align: text-bottom;
+    box-shadow: 0 0 0.5vw var(--phosphor), 0 0 1vw var(--phosphor), 0 0 2vw var(--phosphor);
+    animation: blink 1.4s infinite step-end;
+  }
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  .bg{position:fixed;inset:0;background:#000;z-index:-1;animation:bgIn .9s ease forwards}
+  .bg::before{content:"";position:absolute;inset:0;box-shadow:inset 0 0 26vw rgba(0,0,0,.95)}
+  @keyframes bgIn{from{opacity:0}to{opacity:1}}
+
+  #matrix{position:fixed;inset:0;z-index:0;opacity:.22;filter:contrast(115%) brightness(90%);display:none}
+
+  .modal{position:fixed;inset:0;background:#000;display:grid;place-items:center;z-index:3;animation:fadeIn .4s ease}
+  .window{
+    border:2px solid var(--phosphor);padding:2vw;background:#000;
+    box-shadow:0 0 2.2vw var(--phosphor);font-size: calc(0.8rem + 0.5vw);
+  }
+  .w-title{font-weight:700;margin-bottom:1vw}
+  .w-body{margin-bottom:1vw;color:#fff}
+  .w-btn{
+    background:transparent;color:var(--phosphor);border:1px solid var(--phosphor);
+    padding:0.6vw 1.2vw;cursor:pointer;font-size: calc(0.7rem + 0.4vw);
+  }
+
+  .shell{position:relative;z-index:1;display:none;animation:fadeIn .6s ease forwards;display:flex}
+  .menu{
+    background:#222;color:#ccc;padding:0 1vw;width:100%;
+    margin: -1vw -1vw 0 -1vw;
+    font-size: calc(0.7rem + 0.4vw);
+    height: 4vh;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  .monitor{
+    flex:1;display:flex;flex-direction:column;opacity:0;transform:scale(.985);
+    transition:opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1);
+    height: 100vh;
+  }
+  .monitor.show{opacity:1;transform:scale(1)}
+  .crt{
+    padding:1vw;border-top:2px solid var(--phosphor);border-bottom:2px solid var(--phosphor);
+    height:100%;
+    display:flex;flex-direction:column;background:rgba(0,0,0,.88);
+    position:relative;overflow:hidden;
+  }
+
+  .crt::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(180deg, transparent 0 2px, var(--scan) 3px);
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    opacity: 1;
+    z-index: 3;
+  }
+
+  .log.flicker .flicker-text {
+    animation: flicker 3.2s infinite;
+  }
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    4% { opacity: 0.9; }
+    7% { opacity: 0.85; }
+    10%, 11% { opacity: 0.95; }
+    14% { opacity: 0.8; }
+    17% { opacity: 0.92; }
+    25% { opacity: 0.87; }
+    30%, 31% { opacity: 0.97; }
+    45% { opacity: 0.9; }
+    55% { opacity: 0.75; }
+    56% { opacity: 0.88; }
+    72% { opacity: 0.85; }
+    88% { opacity: 0.9; }
+  }
+
+  .crt-poweron { animation: crtOn 1.8s ease-out forwards; }
+  @keyframes crtOn {
+    0%   { transform: scaleY(0.005) scaleX(1);   filter: brightness(5); opacity: 0; background-color: black; }
+    20%  { transform: scaleY(0.005) scaleX(1);   filter: brightness(6); opacity: 1; background-color: black; }
+    50%  { transform: scaleY(1)     scaleX(0.005); filter: brightness(3); background-color: black; }
+    75%  { transform: scaleY(1.1)   scaleX(1.1); filter: brightness(2); background-color: black; }
+    100% { transform: scaleY(1)     scaleX(1);   filter: brightness(1); background-color: transparent; }
+  }
+
+  .side-links {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: fixed;
+    right: 0;
+    top: 0;
+    height: 100vh;
+    background: #000;
+    padding: 0.5vw;
+    width: 3vw;
+    min-width: 30px;
+    z-index: 4;
+    gap: 1vw;
+  }
+  .side-links a {
+    display: block;
+    width: 2vw;
+    height: 2vw;
+    min-width: 15px;
+    min-height: 15px;
+  }
+  .side-links img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+  }
+  .side-links img:hover {
+    transform: scale(1.2);
+  }
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+<canvas id="matrix"></canvas>
+<div class="modal" id="modal">
+  <div class="window" role="dialog" aria-modal="true">
+    <div class="w-title">SYSTEM WARNING</div>
+    <div class="w-body">
+      <div>THIS COMPUTER IS THE PROPERTY OF CGUY</div>
+      <div>IF YOU ARE NOT CGUY KEEP THE FUCK OUT</div>
+    </div>
+    <button class="w-btn" id="proceed">START</button>
+  </div>
+</div>
+<div class="shell" id="shell">
+  <div class="monitor" id="monitor">
+    <div class="crt" id="crt">
+      <div class="menu"><b>Command Prompt</b></div>
+      <div class="log" id="log" aria-live="polite"></div>
+    </div>
+  </div>
+  <div class="side-links">
+    <a href="https://t.me/conspiracyguyportal" target="_blank" rel="noopener"><img src="https://i.imgur.com/rT27cUc.png" alt="Telegram"></a>
+    <a href="https://dexscreener.com/base/0xb72e1b845f24609f1043ae050b023e8a1d98c53a" target="_blank" rel="noopener"><img src="https://i.imgur.com/9qGJqIW.png" alt="Dexscreener"></a>
+    <a href="https://x.com/ConspiGuy" target="_blank" rel="noopener"><img src="https://upload.wikimedia.org/wikipedia/commons/5/57/X_logo_2023_%28white%29.png" alt="X"></a>
+    <a href="https://farcaster.xyz/conspiguy" target="_blank" rel="noopener"><img src="https://i.imgur.com/dpko5GZ.png" alt="Farcaster"></a>
+    <a href="https://www.tiktok.com/@conspiracyguy" target="_blank" rel="noopener"><img src="https://i.imgur.com/AxoXC9B.png" alt="TikTok"></a>
+    <a href="https://www.youtube.com/@Conspiguy" target="_blank" rel="noopener"><img src="https://i.imgur.com/XdpuT2Q.png" alt="YouTube"></a>
+    <a href="https://www.instagram.com/conspiguy" target="_blank" rel="noopener"><img src="https://i.imgur.com/V4nB1oh.png" alt="Instagram"></a>
+	<a href="https://opensea.io/collection/conspiracyguy" target="_blank" rel="noopener"><img src="https://i.imgur.com/VF0dZ4D.png" alt="Opensea"></a>
+	<a href="https://conspiracy-guy.gitbook.io/conspiracy-guy-docs/" target="_blank" rel="noopener"><img src="https://i.imgur.com/OfdGrYa.png" alt="GitBook"></a>
+  </div>
+</div>
+
+<audio id="crtHum" preload="auto">
+  <source src="https://cdn.pixabay.com/download/audio/2022/03/24/audio_a94cb282e7.mp3?filename=crt-computer-monitor-startup-100657.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+  const matrix = document.getElementById('matrix');
+  const mctx = matrix.getContext('2d');
+  const mChars = '01ABCDEFGHJKMNPRSTUVWXYZアカサタナハマヤラワ0123456789';
+  const mFont = Math.max(12, Math.min(18, window.innerWidth * 0.012));
+  const CHAR_HOLD_FRAMES = 1;
+  let mCols = 0;
+  let mDrops = [];
+  let mCharCache = [];
+  let mCharTick = [];
+  let currentInput = null;
+  let awaitingPasswordConfirmation = false;
+
+  // Define the progress bar percentage here (0-100)
+  const PROGRESS_PERCENTAGE = 25;
+
+  function resizeMatrix() {
+    matrix.width = innerWidth;
+    matrix.height = innerHeight;
+    mCols = Math.floor(matrix.width / mFont);
+    mDrops = Array(mCols).fill(1);
+    mCharCache = Array(mCols).fill('').map(() => mChars[Math.floor(Math.random() * mChars.length)]);
+    mCharTick = Array(mCols).fill(0);
+    mctx.font = mFont + 'px monospace';
+  }
+
+  function drawMatrix() {
+    mctx.fillStyle = 'rgba(0,0,0,0.08)';
+    mctx.fillRect(0, 0, matrix.width, matrix.height);
+    mctx.fillStyle = 'rgba(0,255,136,0.9)';
+    for (let i = 0; i < mDrops.length; i++) {
+      if (mCharTick[i] % CHAR_HOLD_FRAMES === 0) {
+        mCharCache[i] = mChars[Math.floor(Math.random() * mChars.length)];
+      }
+      mctx.fillText(mCharCache[i], i * mFont, mDrops[i] * mFont);
+      mCharTick[i]++;
+      if (mDrops[i] * mFont > matrix.height && Math.random() > 0.975) {
+        mDrops[i] = 0;
+      }
+      mDrops[i] += 1.4;
+    }
+    requestAnimationFrame(drawMatrix);
+  }
+
+  addEventListener('resize', resizeMatrix);
+
+  function splitLines(text) { return text.split(/\r\n|\r|\n/); }
+
+  function animatePercentageText(element, targetPercentage, duration) {
+    const startTime = performance.now();
+    const step = targetPercentage / (duration / 20);
+    let currentPercentage = 0;
+
+    const update = () => {
+      const elapsed = performance.now() - startTime;
+      currentPercentage = Math.min(targetPercentage, (elapsed / duration) * targetPercentage);
+      element.textContent = `${Math.floor(currentPercentage)}%`;
+      if (currentPercentage < targetPercentage) {
+        setTimeout(update, 20);
+      } else {
+        element.textContent = `${targetPercentage}%`;
+      }
+    };
+    update();
+  }
+
+  function typeLines(el, text, perChar=0.2, lineDelay=200) {
+    const lines = splitLines(text);
+    let i = 0, j = 0;
+    let currentLineDiv = null;
+    
+    (function step() {
+      if (i >= lines.length) {
+        el.appendChild(document.createElement('br'));
+        createPromptContainer(el);
+        return;
+      }
+
+      const line = lines[i];
+      if (j === 0) {
+        currentLineDiv = document.createElement('div');
+        el.appendChild(currentLineDiv);
+      }
+
+      if (j <= line.length) {
+        const displayText = line;
+        currentLineDiv.textContent = displayText.slice(0, j) + (j < displayText.length ? '_' : '');
+        j += Math.max(1, Math.round(perChar));
+        requestAnimationFrame(step);
+      } else {
+        if (line.startsWith('Status:')) {
+          currentLineDiv.innerHTML = `Status: <span class="progress-container"><span></span></span><span class="progress-percentage">0%</span>`;
+          setTimeout(() => {
+            const bar = currentLineDiv.querySelector('span > span');
+            const percentageText = currentLineDiv.querySelector('.progress-percentage');
+            bar.className = 'progress-bar';
+            bar.style.setProperty('--target-width', `${PROGRESS_PERCENTAGE}%`);
+            animatePercentageText(percentageText, PROGRESS_PERCENTAGE, 2000);
+            el.scrollTop = el.scrollHeight;
+            setTimeout(() => {
+              j = 0;
+              i++;
+              step();
+            }, 2000);
+          }, 100);
+        } else {
+          currentLineDiv.innerHTML = `<span class="flicker-text">${line}</span>`;
+          j = 0;
+          i++;
+          setTimeout(step, lineDelay);
+        }
+      }
+    })();
+  }
+
+  function createPromptContainer(el) {
+    const helpText = document.createElement('div');
+    helpText.innerHTML = '<span class="flicker-text">Type /help for the command list</span>';
+    el.appendChild(helpText);
+    
+    const promptContainer = document.createElement('div');
+    promptContainer.className = 'prompt-container';
+    promptContainer.innerHTML = `<span class="prompt-text">C:\\Guy><span class="cursor"></span></span><input type="text" class="command-input" aria-label="Command input" spellcheck="false">`;
+    el.appendChild(promptContainer);
+    const input = promptContainer.querySelector('.command-input');
+    const promptText = promptContainer.querySelector('.prompt-text');
+    
+    currentInput = input;
+    setTimeout(() => input.focus(), 0);
+    input.addEventListener('input', () => {
+      promptText.innerHTML = `C:\\Guy>${input.value}<span class="cursor"></span>`;
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const command = input.value.trim().toLowerCase();
+        const commandLine = document.createElement('div');
+        commandLine.textContent = `C:\\Guy>${input.value}`;
+        el.insertBefore(commandLine, promptContainer);
+        
+        if (awaitingPasswordConfirmation) {
+          if (command === 'y') {
+            awaitingPasswordConfirmation = false;
+            const output = document.createElement('div');
+            output.className = 'password-ascii-art';
+            fetch('ascii/ascii-art-laugh.txt')
+              .then(response => {
+                if (!response.ok) throw new Error('File not found');
+                return response.text();
+              })
+              .then(text => {
+                output.textContent = text;
+                el.insertBefore(output, promptContainer);
+                input.value = '';
+                el.appendChild(document.createElement('br'));
+                const newPromptContainer = createPromptContainer(el);
+                input.removeEventListener('input', () => {});
+                input.removeEventListener('keydown', () => {});
+                el.removeChild(promptContainer);
+                el.scrollTop = el.scrollHeight;
+              })
+              .catch(() => {
+                output.textContent = 'Failed to load password ASCII art. Please ensure the file exists and is accessible via a web server (e.g., python -m http.server).';
+                el.insertBefore(output, promptContainer);
+                input.value = '';
+                el.appendChild(document.createElement('br'));
+                const newPromptContainer = createPromptContainer(el);
+                input.removeEventListener('input', () => {});
+                input.removeEventListener('keydown', () => {});
+                el.removeChild(promptContainer);
+                el.scrollTop = el.scrollHeight;
+              });
+          } else if (command === 'n') {
+            awaitingPasswordConfirmation = false;
+            const output = document.createElement('div');
+            output.textContent = `Hmmm I'm keeping a close eye on you... Watch out!`;
+            el.insertBefore(output, promptContainer);
+            input.value = '';
+            el.appendChild(document.createElement('br'));
+            const newPromptContainer = createPromptContainer(el);
+            input.removeEventListener('input', () => {});
+            input.removeEventListener('keydown', () => {});
+            el.removeChild(promptContainer);
+            el.scrollTop = el.scrollHeight;
+          } else {
+            const output = document.createElement('div');
+            output.textContent = 'Answer the goddamn question';
+            el.insertBefore(output, promptContainer);
+            input.value = '';
+            el.appendChild(document.createElement('br'));
+            const newPromptContainer = createPromptContainer(el);
+            input.removeEventListener('input', () => {});
+            input.removeEventListener('keydown', () => {});
+            el.removeChild(promptContainer);
+            el.scrollTop = el.scrollHeight;
+          }
+        } else {
+          if (command === '/help') {
+            const output = document.createElement('div');
+            output.textContent = '/access\n/cguy\n/links\n/pigeon\n/sus';
+            el.insertBefore(output, promptContainer);
+            input.value = '';
+            el.appendChild(document.createElement('br'));
+            const newPromptContainer = createPromptContainer(el);
+            input.removeEventListener('input', () => {});
+            input.removeEventListener('keydown', () => {});
+            el.removeChild(promptContainer);
+            el.scrollTop = el.scrollHeight;
+          } else if (command === '/access') {
+            const output = document.createElement('div');
+            output.textContent = 'For full access, please type /password';
+            el.insertBefore(output, promptContainer);
+            input.value = '';
+            el.appendChild(document.createElement('br'));
+            const newPromptContainer = createPromptContainer(el);
+            input.removeEventListener('input', () => {});
+            input.removeEventListener('keydown', () => {});
+            el.removeChild(promptContainer);
+            el.scrollTop = el.scrollHeight;
+          } else if (command === '/cguy') {
+            const output = document.createElement('div');
+            output.textContent = 'Cguy is the paranoid nerd crypto mascot, guiding you through the conspiverse, a unique onchain cartoon project. Featuring a memecoin, nft collection, animations, and a mini-series, it blends conspiracies with high-quality memes. Built by artists to raise meme standards, the lore expands with community input and exclusive nft perks, all tied to the $cguy coin';
+            el.insertBefore(output, promptContainer);
+            input.value = '';
+            el.appendChild(document.createElement('br'));
+            const newPromptContainer = createPromptContainer(el);
+            input.removeEventListener('input', () => {});
+            input.removeEventListener('keydown', () => {});
+            el.removeChild(promptContainer);
+            el.scrollTop = el.scrollHeight;
+          } else if (command === '/pigeon') {
+            const output = document.createElement('div');
+            output.textContent = 'NEVER TRUST THEM!!';
+            el.insertBefore(output, promptContainer);
+            input.value = '';
+            el.appendChild(document.createElement('br'));
+            const newPromptContainer = createPromptContainer(el);
+            input.removeEventListener('input', () => {});
+            input.removeEventListener('keydown', () => {});
+            el.removeChild(promptContainer);
+            el.scrollTop = el.scrollHeight;
+          } else if (command === '/links') {
+            const output = document.createElement('div');
+            output.textContent = 'Just look at the left of your fucking screen bro';
+            el.insertBefore(output, promptContainer);
+            input.value = '';
+            el.appendChild(document.createElement('br'));
+            const newPromptContainer = createPromptContainer(el);
+            input.removeEventListener('input', () => {});
+            input.removeEventListener('keydown', () => {});
+            el.removeChild(promptContainer);
+            el.scrollTop = el.scrollHeight;
+          } else if (command === '/sus') {
+            const output = document.createElement('div');
+            output.className = 'ascii-art';
+            fetch('ascii/ascii-art-pigeon.txt')
+              .then(response => {
+                if (!response.ok) throw new Error('File not found');
+                return response.text();
+              })
+              .then(text => {
+                output.textContent = text;
+                el.insertBefore(output, promptContainer);
+                input.value = '';
+                el.appendChild(document.createElement('br'));
+                const newPromptContainer = createPromptContainer(el);
+                input.removeEventListener('input', () => {});
+                input.removeEventListener('keydown', () => {});
+                el.removeChild(promptContainer);
+                el.scrollTop = el.scrollHeight;
+              })
+              .catch(() => {
+                output.textContent = 'Failed to load ASCII art. Please ensure the file exists and is accessible via a web server (e.g., python -m http.server).';
+                el.insertBefore(output, promptContainer);
+                input.value = '';
+                el.appendChild(document.createElement('br'));
+                const newPromptContainer = createPromptContainer(el);
+                input.removeEventListener('input', () => {});
+                input.removeEventListener('keydown', () => {});
+                el.removeChild(promptContainer);
+                el.scrollTop = el.scrollHeight;
+              });
+          } else if (command === '/password') {
+            const output = document.createElement('div');
+            output.textContent = 'Confirm you really want full access? Y/N';
+            el.insertBefore(output, promptContainer);
+            awaitingPasswordConfirmation = true;
+            input.value = '';
+            el.appendChild(document.createElement('br'));
+            const newPromptContainer = createPromptContainer(el);
+            input.removeEventListener('input', () => {});
+            input.removeEventListener('keydown', () => {});
+            el.removeChild(promptContainer);
+            el.scrollTop = el.scrollHeight;
+          } else {
+            const output = document.createElement('div');
+            output.textContent = 'Command not found';
+            el.insertBefore(output, promptContainer);
+            input.value = '';
+            el.appendChild(document.createElement('br'));
+            const newPromptContainer = createPromptContainer(el);
+            input.removeEventListener('input', () => {});
+            input.removeEventListener('keydown', () => {});
+            el.removeChild(promptContainer);
+            el.scrollTop = el.scrollHeight;
+          }
+        }
+      }
+    });
+
+    el.scrollTop = el.scrollHeight;
+    return promptContainer;
+  }
+
+  const INFO = `Project: Conspiracy Guy (CGUY)\nChain: Base\nTicker: CGUY\nContract: 0x205344EfAd0a46329b752Fb6E33CB6F28d6Db2F4\nComputer Hacking in Progress...\nStatus:\nMy Wallet Key: R6bjB4rY9ZuGzMWFhGR2FfSXVK0jvkx0W5CdZbf4Mr3n6N21tVWhH8DRg0ukhZ1MJvXQtxu2YJYb6aCABGQ0enW (DON'T SHARE WITH ANYONE, NOT EVEN WITH A GORGEOUS CGIRL THAT WANTS TO GIVE ME ETH THROUGH TELEGRAM)\n`;
+
+  const modal = document.getElementById('modal');
+  const shell = document.getElementById('shell');
+  const monitor = document.getElementById('monitor');
+  const logEl = document.getElementById('log');
+  const crtEl = document.getElementById('crt');
+
+  crtEl.addEventListener('click', (e) => {
+    if (e.target.closest('.side-links') || modal.style.display !== 'none') return;
+    if (currentInput) currentInput.focus();
+  });
+
+  const crtHum = document.getElementById('crtHum');
+  let audioUnlocked = false;
+  const unlock = () => {
+    if (audioUnlocked) return;
+    crtHum.volume = 0;
+    crtHum.play().then(() => {
+      crtHum.pause();
+      crtHum.currentTime = 0;
+      crtHum.volume = 1;
+      audioUnlocked = true;
+      document.removeEventListener('pointerdown', unlock);
+      document.removeEventListener('keydown', unlock);
+    }).catch(() => {});
+  };
+  document.addEventListener('pointerdown', unlock, { once: false });
+  document.addEventListener('keydown', unlock, { once: false });
+
+  function fadeOutAudio(audio, ms=1800) {
+    const steps = 15;
+    const step = audio.volume / steps;
+    let n = 0;
+    const t = setInterval(() => {
+      n++;
+      audio.volume = Math.max(0, audio.volume - step);
+      if (n >= steps) {
+        clearInterval(t);
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = 1;
+      }
+    }, ms / steps);
+  }
+
+  document.getElementById('proceed').addEventListener('click', () => {
+    modal.style.display = 'none';
+    shell.style.display = 'flex';
+    crtEl.classList.add('crt-poweron');
+    requestAnimationFrame(() => monitor.classList.add('show'));
+    try {
+      crtHum.currentTime = 0;
+      crtHum.volume = 1;
+      crtHum.play();
+      setTimeout(() => fadeOutAudio(crtHum, 200), 2000);
+    } catch(e) {}
+
+    crtEl.addEventListener('animationend', () => {
+      matrix.style.display = 'block';
+      matrix.style.opacity = '0.3';
+      resizeMatrix();
+      drawMatrix();
+      setTimeout(() => {
+        typeLines(logEl, INFO, 0.2, 200);
+        logEl.classList.add('flicker');
+        fadeOutAudio(crtHum, 300);
+      }, 1200);
+    }, { once: true });
+  });
+</script>
+</body>
+</html>
